@@ -1,0 +1,48 @@
+schema: spec-driven
+
+# Project context
+# Defines non-inferrable constraints, domain scope, and architectural requirements.
+context: |
+  Role & Objective: Senior Frontend Engineer technical test — responsive mobile device e-commerce Single-Page Application (SPA).
+  Specification Source: workflow/backlog/raw/ITX-FrontEndTest1_en.md (Spanish original: ITX-FrontEndTest1_es.md).
+  Workflow Guide: workflow/backlog/user-guide.md. Every change must originate from or link to a backlog item (workflow/backlog/items/ITX-*.md) or discovery doc.
+  
+  Technology Stack & Constraints:
+  - Framework: React 19 with React Router v7 (SPA Library Mode; strictly no SSR and no MPA).
+  - Language: JavaScript (ES6+); explicitly prefer NO TypeScript as required by test specification.
+  - Bundler / Tooling: Vite.
+  - Styling: Modern CSS / Vanilla CSS / CSS Modules with responsive design matching screenshots (workflow/backlog/raw/PLP.png and PDP.png).
+  - Required package.json scripts: start (dev server), build (production), test (vitest/jest suite), lint (eslint/prettier).
+
+# Per-artifact rules
+rules:
+  proposal:
+    - "Trace every proposal to an originating backlog item (workflow/backlog/items/ITX-*.md) or discovery topic."
+    - "Explicitly state Why, What, and Non-Goals (Out of Scope)."
+    - "Scope proposals to a single cohesive capability or refactor."
+  specs:
+    - "Write normative statements using RFC-2119 keywords (MUST, SHALL, SHOULD, MAY, MUST NOT) in ALL CAPS."
+    - "Every requirement MUST include at least one testable scenario formatted as GIVEN / WHEN / THEN with observable outcomes."
+    - "Include negative and edge-case scenarios (API network failures, 404 product not found, empty search results, cache expiration)."
+    - "Avoid leaking implementation details (e.g. internal function or class names) into requirements."
+  design:
+    - "Justify architectural decisions, state management (cart and cache), client routing, and component boundaries."
+    - "Explicitly specify the caching strategy (storage mechanism, 1-hour expiration TTL calculation, revalidation trigger)."
+    - "Document accessibility (WCAG compliance, keyboard navigation, semantic HTML) and responsive design breakpoints."
+  tasks:
+    - "Format all tasks as checkboxes (- [ ] task description) grouped by logical phase."
+    - "Every requirement and design decision must map to at least one task."
+    - "Explicitly include tasks for automated testing (unit and integration tests) for critical paths (cache, cart, filter)."
+    - "Include documentation tasks (README.md, setup instructions) whenever architecture or conventions evolve."
+
+# Per-operation guidance
+operations:
+  apply:
+    guidance:
+      - "Enforce the branch gate: verify current branch matches workflow/config.yaml policy (e.g. feature/ITX-*-<change>) before modifying code."
+      - "Never diverge silently from specs; if requirements or implementations drift, run /opsx:sync before proceeding."
+      - "Run lint and test suites (npm run lint, npm test) to validate each task implementation."
+  archive:
+    guidance:
+      - "Confirm all tasks in tasks.md are checked off and all tests pass before archiving."
+      - "Ensure delta specs are cleanly merged into openspec/specs/ without orphaned requirements."

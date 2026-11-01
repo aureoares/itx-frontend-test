@@ -65,13 +65,36 @@ All routes share the persistent `Layout` component containing `Header`, ensuring
 
 ## 4. State Management & Persistence Layer
 
-### 4.1 Cart State (`src/context/CartContext.jsx`)
-- **Storage Key**: `itx_cart_count` stored in `localStorage`.
-- **State Initialization**: Lazy initializer reads and parses `localStorage.getItem('itx_cart_count')`, defaulting to `0` on parse failure or missing value.
+### 4.1 Data Access & Caching Layer (`src/services/`)
+
+The application implements a decoupled 3-tier data access architecture:
+
+```
+[ UI Layer: React Components / CartContext ]
+               │                │
+               ▼                ▼
+       [ productService ]  [ cartService ]       (Domain Services)
+               │                │
+         ┌─────┴──────┐         │
+         ▼            ▼         ▼
+   [ storageService ]   [ apiClient ]             (Core Infrastructure)
+         │                    │
+         ▼                    ▼
+[ localStorage / Memory ] [ Remote REST API ]
+```
+
+- **`apiClient.js`**: Low-level HTTP client wrapping `fetch` with standard timeouts (10s abort signal), JSON parsing, and normalized `ApiError` exceptions.
+- **`storageService.js`**: Client persistence layer with key prefixing (`itx_`), timestamped envelopes (`{ timestamp, data }`), automatic recovery from corrupted JSON, and transparent in-memory `Map` fallback when storage quota is exceeded or disabled.
+- **`productService.js`**: Domain service managing catalog (`/api/product`) and detail (`/api/product/:id`) retrieval. Enforces exact 1-hour (3,600,000 ms) TTL cache validation with lazy revalidation upon expiration.
+- **`cartService.js`**: Domain service managing cart mutations (`POST /api/cart`) and accumulating running item quantities on the client against the stateless mock API.
+
+### 4.2 Cart State & Reactivity (`src/context/CartContext.jsx`)
+- **Storage Key**: `itx_cart_count` stored via `storageService`.
+- **State Initialization**: Lazy initializer reads and parses `cartService.getStoredCartCount()`, defaulting to `0` on parse failure or missing value.
 - **Mutations**:
-  - `addToCart(amount = 1)`: Increments counter and immediately writes new value to `localStorage`.
-  - `setCartCount(count)`: Updates count to an exact non-negative integer and writes to `localStorage`.
-- **Cross-Tab Synchronization**: Listens for window `'storage'` events to reflect cart updates across multiple active browser tabs in real time.
+  - `addToCart(amountOrPayload)`: When passed a device payload (`{ id, colorCode, storageCode }`), executes `cartService.addDeviceToCart`, toggling `isMutating` state, updating total count in storage, and capturing any error in `mutationError`. Also supports numeric increment fallback for direct testing.
+  - `setCartCount(count)`: Updates count to an exact non-negative integer via `cartService.setStoredCartCount(count)`.
+- **Cross-Tab Synchronization**: Listens for window `'storage'` events on `'itx_cart_count'` to reflect cart updates across multiple active browser tabs in real time.
 
 ---
 

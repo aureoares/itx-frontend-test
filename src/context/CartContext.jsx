@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { cartService } from '../services/cartService';
 
 const CART_STORAGE_KEY = 'itx_cart_count';
 
@@ -9,39 +10,43 @@ export function CartProvider({ children, initialCount }) {
     if (typeof initialCount === 'number') {
       return initialCount;
     }
-    try {
-      const stored = localStorage.getItem(CART_STORAGE_KEY);
-      if (stored !== null) {
-        const parsed = parseInt(stored, 10);
-        return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
-      }
-    } catch {
-      // Storage unavailable or disabled
-    }
-    return 0;
+    return cartService.getStoredCartCount();
   });
 
+  const [isMutating, setIsMutating] = useState(false);
+  const [mutationError, setMutationError] = useState(null);
+
   const setCartCount = useCallback((newCount) => {
-    const validCount = Math.max(0, parseInt(newCount, 10) || 0);
+    const validCount = cartService.setStoredCartCount(newCount);
     setCartCountState(validCount);
-    try {
-      localStorage.setItem(CART_STORAGE_KEY, validCount.toString());
-    } catch {
-      // Ignore storage errors in restricted contexts
-    }
   }, []);
 
-  const addToCart = useCallback((amount = 1) => {
-    setCartCountState((prev) => {
-      const updated = prev + Math.max(0, parseInt(amount, 10) || 1);
+  const addToCart = useCallback(async (amountOrPayload = 1) => {
+    // If payload object is passed ({ id, colorCode, storageCode })
+    if (typeof amountOrPayload === 'object' && amountOrPayload !== null && amountOrPayload.id) {
+      setIsMutating(true);
+      setMutationError(null);
       try {
-        localStorage.setItem(CART_STORAGE_KEY, updated.toString());
-      } catch {
-        // Ignore storage errors
+        const { totalCount } = await cartService.addDeviceToCart(amountOrPayload);
+        setCartCountState(totalCount);
+        return totalCount;
+      } catch (err) {
+        setMutationError(err);
+        throw err;
+      } finally {
+        setIsMutating(false);
       }
+    }
+
+    // Direct numeric increment fallback
+    const increment = typeof amountOrPayload === 'number' ? Math.max(0, amountOrPayload) : 1;
+    setCartCountState((prev) => {
+      const updated = prev + increment;
+      cartService.setStoredCartCount(updated);
       return updated;
     });
-  }, []);
+    return cartCount + increment;
+  }, [cartCount]);
 
   useEffect(() => {
     const handleStorageChange = (event) => {
@@ -57,7 +62,15 @@ export function CartProvider({ children, initialCount }) {
   }, []);
 
   return (
-    <CartContext.Provider value={{ cartCount, setCartCount, addToCart }}>
+    <CartContext.Provider
+      value={{
+        cartCount,
+        setCartCount,
+        addToCart,
+        isMutating,
+        mutationError,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

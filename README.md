@@ -81,7 +81,7 @@ src/
 │   └── layout/
 │       └── Layout/        # Shell layout wrapping Header and <main id="main-content">
 ├── context/
-│   ├── CartContext.jsx    # Reactive cart state provider backed by localStorage (itx_cart_count)
+│   ├── CartContext.jsx    # Reactive cart state provider backed by cartService
 │   └── CartContext.test.jsx
 ├── pages/
 │   ├── NotFound/          # 404 fallback page with return to home link
@@ -89,6 +89,11 @@ src/
 │   └── ProductList/       # PLP view placeholder
 ├── router/
 │   └── index.jsx          # React Router v7 createBrowserRouter configuration
+├── services/
+│   ├── apiClient.js       # Centralized HTTP fetch client with timeouts & ApiError
+│   ├── cartService.js     # Cart mutation & client-side accumulation logic
+│   ├── productService.js  # Cached catalog/detail retrieval with 1-hour TTL
+│   └── storageService.js   # Envelope storage with corrupted recovery & memory fallback
 ├── styles/
 │   ├── global.css         # Modern reset, base typography, accessible focus styles
 │   └── variables.css      # Design tokens (colors, typography, spacing, shadows, breakpoints)
@@ -99,11 +104,21 @@ src/
 └── main.jsx               # React DOM entry point
 ```
 
-For in-depth details on component contracts, data flows, and routing topology, consult [docs/topology.md](docs/topology.md).
+For domain models and schemas, see [docs/domain.md](docs/domain.md). For in-depth architectural details on component contracts, data flows, and routing topology, consult [docs/topology.md](docs/topology.md).
 
 ---
 
-## 6. SPA Production Deployment & Deep-Linking (Rewrite Rules)
+## 6. Client Caching & Persistence Architecture
+
+The data access layer ensures resilient, high-performance interactions with the remote backend:
+
+- **1-Hour Expiration TTL**: Catalog (`/api/product`) and product detail (`/api/product/:id`) responses are stored inside timestamped envelopes (`{ timestamp: number, data: any }`). Lookups within 1 hour (`3,600,000` ms) are served directly from cache with zero network requests. Stale entries trigger automatic on-demand revalidation.
+- **Storage Resilience**: Corrupted JSON entries are automatically purged upon read without crashing the application. If `localStorage` is disabled or throws a `QuotaExceededError`, the layer transparently falls back to an in-memory `Map` store for the active session.
+- **Cart Accumulation**: Because `POST /api/cart` statelessly returns `{ count: 1 }`, `cartService` maintains and increments the accumulated cart count on the client, persisting it in `itx_cart_count` and broadcasting updates reactively across components and open browser tabs.
+
+---
+
+## 7. SPA Production Deployment & Deep-Linking (Rewrite Rules)
 
 In a pure Single-Page Application using HTML5 `pushState` history routing (such as React Router v7 in SPA mode), direct requests or browser refreshes on nested routes (e.g. `https://domain.com/product/1001` or `/unknown-path`) will result in an HTTP 404 from static web servers unless requests are rewritten to `index.html`.
 
@@ -150,11 +165,15 @@ npx vite preview --port 3000
 
 ---
 
-## 7. Testing Strategy
+## 8. Testing Strategy
 
-The project employs a dual-layer testing approach:
-1. **Unit Tests**:
-   - `CartContext.test.jsx`: Validates initialization from `localStorage`, state updates via `addToCart` and `setCartCount`, boundaries, and multi-tab storage synchronization.
-   - Component tests (`Header`, `Breadcrumbs`, `CartBadge`, `NotFound`): Validates DOM roles, accessibility attributes (`aria-current="page"`, `aria-label`, `role="status"`), and responsive class structures.
-2. **Integration Tests**:
+The project employs a comprehensive testing approach covering unit, domain, and integration levels:
+1. **Service & Domain Unit Tests**:
+   - `apiClient.test.js`: Validates `GET /api/product`, `GET /api/product/:id`, `POST /api/cart`, HTTP 404/500 errors, timeout aborts (408), and network disconnects.
+   - `storageService.test.js`: Validates envelope storage `{ timestamp, data }`, malformed JSON recovery, and `QuotaExceededError` in-memory fallback.
+   - `productService.test.js`: Validates 1-hour TTL boundary using Vitest fake timers (`vi.useFakeTimers()`), zero-network cache hits (< 1h), and lazy revalidation (> 1h).
+   - `cartService.test.js` & `CartContext.test.jsx`: Validates cart count accumulation against stateless mock API responses, state mutation flags, and multi-tab storage synchronization.
+2. **Component & Shell Integration Tests**:
+   - Component tests (`Header`, `Breadcrumbs`, `CartBadge`, `NotFound`): Validates DOM landmark roles, accessibility attributes (`aria-current="page"`, `aria-label`, `role="status"`), and responsive class structures.
    - `AppShell.test.jsx`: Validates end-to-end client routing with memory history, breadcrumb transitions, fallback route handling (404), and cart counter continuity across views.
+

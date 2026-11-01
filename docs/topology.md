@@ -112,6 +112,7 @@ The application implements a decoupled 3-tier data access architecture:
 - **CSS Modules**:
   - Layout & common stylesheets (`Header.module.css`, `Breadcrumbs.module.css`, `CartBadge.module.css`, `Layout.module.css`, `NotFound.module.css`).
   - Catalog stylesheets (`SearchBar.module.css`, `ProductGrid.module.css`, `ProductCard.module.css`, `ProductSkeleton.module.css`, `ProductList.module.css`).
+  - Details stylesheets (`ProductImage.module.css`, `ProductDescription.module.css`, `ProductActions.module.css`, `ProductDetailsSkeleton.module.css`, `ProductDetails.module.css`).
 
 ---
 
@@ -130,7 +131,22 @@ See [docs/flows/catalog-browsing.md](flows/catalog-browsing.md) for sequence flo
 
 ---
 
-## 7. Verification and Compliance
+## 7. Product Details Components Topology (`src/components/details/`)
+
+The product details and cart capability introduced in `ITX-004` is organized into dedicated components adhering to the two-column layout (`PDP.png`):
+
+| Component | Path | Responsibility |
+| :--- | :--- | :--- |
+| `ProductImage` | `src/components/details/ProductImage/` | Column 1: Presents the device photo with natural aspect ratio container, accessible alt text, and graceful broken image fallback. |
+| `ProductDescription` | `src/components/details/ProductDescription/` | Column 2: Displays Brand, Model, Price (`formatPrice`), and structured technical specifications table (CPU, RAM, OS, Resolution, Battery, Cameras, Dimensions, Weight) with null-safe fallbacks. |
+| `ProductActions` | `src/components/details/ProductActions/` | Column 2: Manages Storage and Color variant selectors with mandatory default pre-selection, "Add to cart" CTA button with in-flight disable state, and error/success alerts. |
+| `ProductDetailsSkeleton` | `src/components/details/ProductDetailsSkeleton/` | Shimmer loading placeholder mirroring the two-column desktop/tablet layout and single-column mobile view to eliminate CLS (Cumulative Layout Shift). |
+
+See [docs/flows/product-details-cart.md](flows/product-details-cart.md) for sequence flows, variant pre-selection, and cart mutation details.
+
+---
+
+## 8. Verification and Compliance
 
 - **ESLint Compliance**: Strict standard rules enforced without lint warnings.
 - **Production Build**: Zero chunk errors; assets bundled into `dist/` with gzip optimization.

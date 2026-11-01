@@ -110,11 +110,27 @@ The application implements a decoupled 3-tier data access architecture:
   - Accessible focus rings: Visible 2px outline with 2px offset (`:focus-visible`).
   - Layout stability: `min-height: 100vh` on root container to eliminate layout shift during route transitions.
 - **CSS Modules**:
-  - Component-level scoped stylesheets (`Header.module.css`, `Breadcrumbs.module.css`, `CartBadge.module.css`, `Layout.module.css`, `NotFound.module.css`).
+  - Layout & common stylesheets (`Header.module.css`, `Breadcrumbs.module.css`, `CartBadge.module.css`, `Layout.module.css`, `NotFound.module.css`).
+  - Catalog stylesheets (`SearchBar.module.css`, `ProductGrid.module.css`, `ProductCard.module.css`, `ProductSkeleton.module.css`, `ProductList.module.css`).
 
 ---
 
-## 6. Verification and Compliance
+## 6. Catalog Components Topology (`src/components/catalog/`)
+
+The catalog capability introduced in `ITX-003` is organized into single-responsibility components:
+
+| Component | Path | Responsibility |
+| :--- | :--- | :--- |
+| `SearchBar` | `src/components/catalog/SearchBar/` | Controlled search input with clear CTA, search icon, result count, and accessible `role="search"`. |
+| `ProductGrid` | `src/components/catalog/ProductGrid/` | CSS Grid container enforcing responsive column distribution (max 4 on desktop, 3 on tablet, 2 on small tablet, 1 on mobile). |
+| `ProductCard` | `src/components/catalog/ProductCard/` | Device item card displaying image with fallback handler, brand, model, formatted price (`formatPrice`), and Link to `/product/:id`. |
+| `ProductSkeleton` | `src/components/catalog/ProductSkeleton/` | Placeholder card matching `ProductCard` dimensions with shimmer animation to prevent layout shifts. |
+
+See [docs/flows/catalog-browsing.md](flows/catalog-browsing.md) for sequence flows and caching lifecycle details.
+
+---
+
+## 7. Verification and Compliance
 
 - **ESLint Compliance**: Strict standard rules enforced without lint warnings.
 - **Production Build**: Zero chunk errors; assets bundled into `dist/` with gzip optimization.

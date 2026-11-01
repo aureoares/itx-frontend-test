@@ -1,9 +1,9 @@
 ---
 id: ITX-003
 title: Product List Page (PLP) Grid and Real-Time Search Filtering
-status: enriched
+status: implemented
 discovery: product-catalog
-change: ~
+change: 2026-11-01-product-list-page-search
 priority: must
 estimate: 3 SP
 language: en
@@ -92,6 +92,6 @@ Scenario: Image load error displays fallback placeholder
 
 ## Definition of Done
 
-- [ ] Acceptance criteria covered by tests
-- [ ] Spec deltas archived in openspec/specs/
+- [x] Acceptance criteria covered by tests
+- [x] Spec deltas archived in openspec/specs/
 - [ ] Work merged into the integration branch

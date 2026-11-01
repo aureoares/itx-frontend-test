@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { routes } from '../router';
 import { CartProvider } from '../context/CartContext';
+import { productService } from '../services/productService';
 
 function renderAppWithRoute(initialEntries = ['/'], initialCount = 0) {
   const testRouter = createMemoryRouter(routes, {
@@ -18,12 +19,18 @@ function renderAppWithRoute(initialEntries = ['/'], initialCount = 0) {
 }
 
 describe('AppShell Integration Tests', () => {
-  it('renders application shell with header, main content, and "0" cart count at root', () => {
+  beforeEach(() => {
+    vi.spyOn(productService, 'getProducts').mockResolvedValue([]);
+  });
+
+  it('renders application shell with header, main content, and "0" cart count at root', async () => {
     renderAppWithRoute(['/'], 0);
 
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
-    expect(screen.getByTestId('product-list-page')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('product-list-page')).toBeInTheDocument();
+    });
     expect(screen.getByTestId('cart-badge-count')).toHaveTextContent('0');
   });
 

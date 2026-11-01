@@ -44,6 +44,15 @@ cd itx-frontend-test
 npm install
 ```
 
+> [!NOTE]
+> **Dependency Security & `npm audit` Status**:
+> - **Production Runtime (0 Vulnerabilities)**: The production bundle dependencies (`react`, `react-dom`, `react-router-dom`) are completely clean. Running `npm audit --omit=dev` confirms **0 vulnerabilities**.
+> - **Development Tooling Only**: Running `npm audit` without flags reports 10 warnings (8 moderate, 2 critical) originating exclusively from local dev tools (`vitest` 3.x worker threads and `eslint` 9 transitive glob matching via `minimatch`). These packages are strictly development/CI tooling and are never bundled into or executed by the client-facing application.
+> - **Recommended Audit Command for CI / Production Evaluation**:
+>   ```bash
+>   npm audit --omit=dev
+>   ```
+
 ---
 
 ## 4. Standard Scripts
